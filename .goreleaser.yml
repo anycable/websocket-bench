@@ -27,7 +27,7 @@ changelog:
 brew:
   github:
     owner: Arkweid
-    name: websocket-bench-homebrew-tap
+    name: homebrew-websocket-bench
   homepage: "https://github.com/Arkweid/websocket-bench"
   description: "CLI interface for benchmark AnyCable"
   folder: Formula
