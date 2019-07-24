@@ -3,9 +3,10 @@ package benchmark
 import (
 	"encoding/json"
 	"fmt"
-	"golang.org/x/net/websocket"
 	"strconv"
 	"time"
+
+	"golang.org/x/net/websocket"
 )
 
 type ActionCableServerAdapter struct {

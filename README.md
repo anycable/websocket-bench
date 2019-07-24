@@ -1,4 +1,5 @@
 # websocket-bench
-CLI interface for benchmark AnyCable
 
-Original [repo](https://github.com/hashrocket/websocket-shootout)
+CLI interface for benchmarking WebSocket servers.
+
+Original [repo](https://github.com/hashrocket/websocket-shootout).

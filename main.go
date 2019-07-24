@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/Arkweid/websocket-bench/benchmark"
+	"github.com/anycable/websocket-bench/benchmark"
 
 	"github.com/spf13/cobra"
 )

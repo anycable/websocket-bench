@@ -26,9 +26,9 @@ changelog:
 
 brew:
   github:
-    owner: Arkweid
+    owner: anycable
     name: homebrew-websocket-bench
-  homepage: "https://github.com/Arkweid/websocket-bench"
+  homepage: "https://github.com/anycable/websocket-bench"
   description: "CLI interface for benchmark AnyCable"
   folder: Formula
   test: |
@@ -36,7 +36,7 @@ brew:
 
 nfpm:
   name_template: '{{ .ProjectName }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
-  homepage:  "https://github.com/Arkweid/websocket-bench"
+  homepage:  "https://github.com/anycable/websocket-bench"
   description: CLI interface for benchmark AnyCable
   maintainer: Alexander Abroskin <arkweid@evilmartians.com>
   license: MIT

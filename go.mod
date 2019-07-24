@@ -1,4 +1,6 @@
-module github.com/Arkweid/websocket-bench
+module github.com/anycable/websocket-bench
+
+go 1.12
 
 require (
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
