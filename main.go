@@ -26,6 +26,7 @@ var options struct {
 	workerListenPort   int
 	workerAddrs        []string
 	totalSteps         int
+	interactive        bool
 }
 
 func main() {
@@ -49,6 +50,7 @@ func main() {
 	cmdEcho.Flags().IntVarP(&options.payloadPaddingSize, "payload-padding", "", 0, "payload padding size")
 	cmdEcho.Flags().DurationVarP(&options.limitRTT, "limit-rtt", "", time.Millisecond*500, "Max RTT at limit percentile")
 	cmdEcho.Flags().IntVarP(&options.totalSteps, "total-steps", "", 0, "Run benchmark for specified number of steps")
+	cmdEcho.Flags().BoolVarP(&options.interactive, "i", "", false, "Interactive mode (requires user input to move to the next step")
 	rootCmd.AddCommand(cmdEcho)
 
 	cmdBroadcast := &cobra.Command{
@@ -69,6 +71,7 @@ func main() {
 	cmdBroadcast.Flags().IntVarP(&options.payloadPaddingSize, "payload-padding", "", 0, "payload padding size")
 	cmdBroadcast.Flags().DurationVarP(&options.limitRTT, "limit-rtt", "", time.Millisecond*500, "Max RTT at limit percentile")
 	cmdBroadcast.Flags().IntVarP(&options.totalSteps, "total-steps", "", 0, "Run benchmark for specified number of steps")
+	cmdBroadcast.Flags().BoolVarP(&options.interactive, "i", "", false, "Interactive mode (requires user input to move to the next step")
 	rootCmd.AddCommand(cmdBroadcast)
 
 	cmdWorker := &cobra.Command{
@@ -110,6 +113,7 @@ func Stress(cmd *cobra.Command, args []string) {
 	config.LimitPercentile = options.limitPercentile
 	config.LimitRTT = options.limitRTT
 	config.TotalSteps = options.totalSteps
+	config.Interactive = options.interactive
 	config.ResultRecorder = benchmark.NewTextResultRecorder(os.Stdout)
 
 	localAddrs := parseTCPAddrs(options.localAddrs)

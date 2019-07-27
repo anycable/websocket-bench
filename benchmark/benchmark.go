@@ -31,6 +31,7 @@ type Config struct {
 	LimitPercentile    int
 	LimitRTT           time.Duration
 	TotalSteps         int
+	Interactive        bool
 	ClientPools        []ClientPool
 	ResultRecorder     ResultRecorder
 }
@@ -141,6 +142,10 @@ func (b *Benchmark) Run() error {
 			return nil
 		}
 
+		if b.Interactive {
+			promptToContinue()
+		}
+
 		if err := b.startClients(b.ServerType, b.StepSize); err != nil {
 			return err
 		}
@@ -188,4 +193,10 @@ func (b *Benchmark) sendToRandomClient() error {
 	}
 
 	return nil
+}
+
+func promptToContinue() {
+	fmt.Print("Press any key to continue to the next step")
+	var input string
+	fmt.Scanln(&input)
 }
