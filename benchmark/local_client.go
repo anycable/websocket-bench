@@ -1,7 +1,9 @@
 package benchmark
 
 import (
+	"crypto/tls"
 	"fmt"
+	"io"
 	"net"
 	"strconv"
 	"sync"
@@ -109,7 +111,18 @@ func newLocalClient(
 		return nil, err
 	}
 
-	c.conn, err = websocket.NewClient(config, tcpConn)
+	var conn io.ReadWriteCloser
+
+	if config.Location.Scheme == "wss" {
+		conn = tls.Client(tcpConn, &tls.Config{
+			InsecureSkipVerify: true,
+			ServerName:         host,
+		})
+	} else {
+		conn = tcpConn
+	}
+
+	c.conn, err = websocket.NewClient(config, conn)
 	if err != nil {
 		return nil, err
 	}
