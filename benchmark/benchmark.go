@@ -32,6 +32,9 @@ type Config struct {
 	LimitRTT           time.Duration
 	TotalSteps         int
 	Interactive        bool
+	StepDelay          time.Duration
+	CommandDelay       time.Duration
+	CommandDelayChance int
 	ClientPools        []ClientPool
 	ResultRecorder     ResultRecorder
 }
@@ -146,6 +149,10 @@ func (b *Benchmark) Run() error {
 			promptToContinue()
 		}
 
+		if b.StepDelay > 0 {
+			time.Sleep(b.StepDelay)
+		}
+
 		if err := b.startClients(b.ServerType, b.StepSize); err != nil {
 			return err
 		}
@@ -176,6 +183,10 @@ func (b *Benchmark) randomClient() Client {
 func (b *Benchmark) sendToRandomClient() error {
 	if len(b.clients) == 0 {
 		panic("no clients")
+	}
+
+	if b.CommandDelay > 0 && b.CommandDelayChance > rand.Intn(100) {
+		time.Sleep(b.CommandDelay)
 	}
 
 	client := b.randomClient()

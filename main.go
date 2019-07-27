@@ -27,6 +27,9 @@ var options struct {
 	workerAddrs        []string
 	totalSteps         int
 	interactive        bool
+	stepsDelay         int
+	commandDelay       float64
+	commandDelayChance int
 }
 
 func main() {
@@ -50,7 +53,10 @@ func main() {
 	cmdEcho.Flags().IntVarP(&options.payloadPaddingSize, "payload-padding", "", 0, "payload padding size")
 	cmdEcho.Flags().DurationVarP(&options.limitRTT, "limit-rtt", "", time.Millisecond*500, "Max RTT at limit percentile")
 	cmdEcho.Flags().IntVarP(&options.totalSteps, "total-steps", "", 0, "Run benchmark for specified number of steps")
-	cmdEcho.Flags().BoolVarP(&options.interactive, "i", "", false, "Interactive mode (requires user input to move to the next step")
+	cmdEcho.Flags().BoolVarP(&options.interactive, "interactive", "i", false, "Interactive mode (requires user input to move to the next step")
+	cmdEcho.Flags().IntVarP(&options.stepsDelay, "steps-delay", "", 0, "Sleep for seconds between steps")
+	cmdEcho.Flags().Float64VarP(&options.commandDelay, "command-delay", "", 0, "Sleep for seconds before sending client command")
+	cmdEcho.Flags().IntVarP(&options.commandDelayChance, "command-delay-chance", "", 100, "The percentage of commands to add delay to")
 	rootCmd.AddCommand(cmdEcho)
 
 	cmdBroadcast := &cobra.Command{
@@ -71,7 +77,10 @@ func main() {
 	cmdBroadcast.Flags().IntVarP(&options.payloadPaddingSize, "payload-padding", "", 0, "payload padding size")
 	cmdBroadcast.Flags().DurationVarP(&options.limitRTT, "limit-rtt", "", time.Millisecond*500, "Max RTT at limit percentile")
 	cmdBroadcast.Flags().IntVarP(&options.totalSteps, "total-steps", "", 0, "Run benchmark for specified number of steps")
-	cmdBroadcast.Flags().BoolVarP(&options.interactive, "i", "", false, "Interactive mode (requires user input to move to the next step")
+	cmdBroadcast.Flags().BoolVarP(&options.interactive, "interactive", "i", false, "Interactive mode (requires user input to move to the next step")
+	cmdBroadcast.Flags().IntVarP(&options.stepsDelay, "steps-delay", "", 0, "Sleep for seconds between steps")
+	cmdBroadcast.Flags().Float64VarP(&options.commandDelay, "command-delay", "", 0, "Sleep for seconds before sending client command")
+	cmdBroadcast.Flags().IntVarP(&options.commandDelayChance, "command-delay-chance", "", 100, "The percentage of commands to add delay to")
 	rootCmd.AddCommand(cmdBroadcast)
 
 	cmdWorker := &cobra.Command{
@@ -114,6 +123,9 @@ func Stress(cmd *cobra.Command, args []string) {
 	config.LimitRTT = options.limitRTT
 	config.TotalSteps = options.totalSteps
 	config.Interactive = options.interactive
+	config.StepDelay = time.Duration(options.stepsDelay) * time.Second
+	config.CommandDelay = time.Duration(options.commandDelay) * time.Second
+	config.CommandDelayChance = options.commandDelayChance
 	config.ResultRecorder = benchmark.NewTextResultRecorder(os.Stdout)
 
 	localAddrs := parseTCPAddrs(options.localAddrs)
