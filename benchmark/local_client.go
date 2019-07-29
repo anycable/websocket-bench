@@ -107,6 +107,8 @@ func newLocalClient(
 		conn = tcpConn
 	}
 
+	initTime := time.Now()
+
 	c.conn, err = websocket.NewClient(RemoteAddr.Config, conn)
 	if err != nil {
 		return nil, err
@@ -120,6 +122,13 @@ func newLocalClient(
 	case "actioncable":
 		acsa := &ActionCableServerAdapter{conn: c.conn}
 		err = acsa.Startup()
+		if err != nil {
+			return nil, err
+		}
+		c.serverAdapter = acsa
+	case "actioncable-connect":
+		acsa := &ActionCableServerConnectAdapter{conn: c.conn}
+		err = acsa.Connected(initTime)
 		if err != nil {
 			return nil, err
 		}

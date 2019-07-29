@@ -1,12 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/anycable/websocket-bench/benchmark"
+	"golang.org/x/net/websocket"
 
 	"github.com/spf13/cobra"
 )
@@ -96,6 +99,26 @@ func main() {
 	cmdWorker.Flags().IntVarP(&options.workerListenPort, "port", "p", 3000, "port to listen on")
 	rootCmd.AddCommand(cmdWorker)
 
+	cmdConnect := &cobra.Command{
+		Use:   "connect URL",
+		Short: "Connection initialization stress test",
+		Long:  "Stress test connection initialzation",
+		Run:   Stress,
+	}
+	cmdConnect.PersistentFlags().StringVarP(&options.websocketOrigin, "origin", "o", "http://localhost", "websocket origin")
+	cmdConnect.PersistentFlags().StringSliceVarP(&options.localAddrs, "local-addr", "l", []string{}, "local IP address to connect from")
+	cmdConnect.PersistentFlags().StringVarP(&options.serverType, "server-type", "", "json", "server type to connect to (json, binary, actioncable, phoenix)")
+	cmdConnect.PersistentFlags().StringSliceVarP(&options.workerAddrs, "worker-addr", "w", []string{}, "worker address to distribute connections to")
+	cmdConnect.Flags().IntVarP(&options.concurrent, "concurrent", "c", 50, "concurrent connection requests")
+	cmdConnect.Flags().IntVarP(&options.stepSize, "step-size", "", 5000, "number of clients to connect at each step")
+	cmdConnect.Flags().IntVarP(&options.totalSteps, "total-steps", "", 0, "Run benchmark for specified number of steps")
+	cmdConnect.Flags().BoolVarP(&options.interactive, "interactive", "i", false, "Interactive mode (requires user input to move to the next step")
+	cmdConnect.Flags().IntVarP(&options.stepsDelay, "steps-delay", "", 0, "Sleep for seconds between steps")
+	cmdConnect.Flags().Float64VarP(&options.commandDelay, "command-delay", "", 0, "Sleep for seconds before sending client command")
+	cmdConnect.Flags().IntVarP(&options.commandDelayChance, "command-delay-chance", "", 100, "The percentage of commands to add delay to")
+	cmdConnect.PersistentFlags().StringVarP(&options.channel, "channel", "", "{\"channel\":\"BenchmarkChannel\"}", "Action Cable channel identifier")
+	rootCmd.AddCommand(cmdConnect)
+
 	rootCmd.Execute()
 }
 
@@ -114,6 +137,7 @@ func Stress(cmd *cobra.Command, args []string) {
 		config.ClientCmd = benchmark.ClientEchoCmd
 	case "broadcast":
 		config.ClientCmd = benchmark.ClientBroadcastCmd
+	case "connect":
 	default:
 		panic("invalid command name")
 	}
@@ -161,10 +185,18 @@ func Stress(cmd *cobra.Command, args []string) {
 		config.ClientPools = append(config.ClientPools, rcp)
 	}
 
-	b := benchmark.New(config)
-	err := b.Run()
-	if err != nil {
-		log.Fatal(err)
+	if cmd.Name() == "connect" {
+		b := benchmark.NewConnect(config)
+		err := b.Run()
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		b := benchmark.New(config)
+		err := b.Run()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
 
