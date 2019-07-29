@@ -9,8 +9,13 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+var CableConfig struct {
+	Channel string
+}
+
 type ActionCableServerAdapter struct {
-	conn *websocket.Conn
+	conn      *websocket.Conn
+	connected bool
 }
 
 type acsaMsg struct {
@@ -22,6 +27,15 @@ type acsaMsg struct {
 }
 
 func (acsa *ActionCableServerAdapter) Startup() error {
+	acsa.connected = false
+	return nil
+}
+
+func (acsa *ActionCableServerAdapter) EnsureConnected() error {
+	if acsa.connected {
+		return nil
+	}
+
 	welcomeMsg, err := acsa.receiveIgnoringPing()
 	if err != nil {
 		return err
@@ -32,12 +46,13 @@ func (acsa *ActionCableServerAdapter) Startup() error {
 
 	err = websocket.JSON.Send(acsa.conn, &acsaMsg{
 		Command:    "subscribe",
-		Identifier: `{"channel":"BenchmarkChannel"}`,
+		Identifier: CableConfig.Channel,
 	})
 	if err != nil {
 		return err
 	}
 
+	acsa.connected = true
 	return nil
 }
 
@@ -49,7 +64,7 @@ func (acsa *ActionCableServerAdapter) SendEcho(payload *Payload) error {
 
 	return websocket.JSON.Send(acsa.conn, &acsaMsg{
 		Command:    "message",
-		Identifier: `{"channel":"BenchmarkChannel"}`,
+		Identifier: CableConfig.Channel,
 		Data:       string(data),
 	})
 }
@@ -62,12 +77,14 @@ func (acsa *ActionCableServerAdapter) SendBroadcast(payload *Payload) error {
 
 	return websocket.JSON.Send(acsa.conn, &acsaMsg{
 		Command:    "message",
-		Identifier: `{"channel":"BenchmarkChannel"}`,
+		Identifier: CableConfig.Channel,
 		Data:       string(data),
 	})
 }
 
 func (acsa *ActionCableServerAdapter) Receive() (*serverSentMsg, error) {
+	acsa.EnsureConnected()
+
 	msg, err := acsa.receiveIgnoringPing()
 	if err != nil {
 		return nil, err

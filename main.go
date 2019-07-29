@@ -30,6 +30,7 @@ var options struct {
 	stepsDelay         int
 	commandDelay       float64
 	commandDelayChance int
+	channel            string
 }
 
 func main() {
@@ -42,7 +43,7 @@ func main() {
 		Long:  "Stress test 1 to 1 performance with an echo test",
 		Run:   Stress,
 	}
-	cmdEcho.PersistentFlags().StringVarP(&options.websocketOrigin, "origin", "o", "", "websocket origin")
+	cmdEcho.PersistentFlags().StringVarP(&options.websocketOrigin, "origin", "o", "http://localhost", "websocket origin")
 	cmdEcho.PersistentFlags().StringSliceVarP(&options.localAddrs, "local-addr", "l", []string{}, "local IP address to connect from")
 	cmdEcho.PersistentFlags().StringVarP(&options.serverType, "server-type", "", "json", "server type to connect to (json, binary, actioncable, phoenix)")
 	cmdEcho.PersistentFlags().StringSliceVarP(&options.workerAddrs, "worker-addr", "w", []string{}, "worker address to distribute connections to")
@@ -57,6 +58,7 @@ func main() {
 	cmdEcho.Flags().IntVarP(&options.stepsDelay, "steps-delay", "", 0, "Sleep for seconds between steps")
 	cmdEcho.Flags().Float64VarP(&options.commandDelay, "command-delay", "", 0, "Sleep for seconds before sending client command")
 	cmdEcho.Flags().IntVarP(&options.commandDelayChance, "command-delay-chance", "", 100, "The percentage of commands to add delay to")
+	cmdEcho.PersistentFlags().StringVarP(&options.channel, "channel", "", "{\"channel\":\"BenchmarkChannel\"}", "Action Cable channel identifier")
 	rootCmd.AddCommand(cmdEcho)
 
 	cmdBroadcast := &cobra.Command{
@@ -65,7 +67,7 @@ func main() {
 		Long:  "Stress test 1 to many performance with an broadcast test",
 		Run:   Stress,
 	}
-	cmdBroadcast.PersistentFlags().StringVarP(&options.websocketOrigin, "origin", "o", "", "websocket origin")
+	cmdBroadcast.PersistentFlags().StringVarP(&options.websocketOrigin, "origin", "o", "http://localhost", "websocket origin")
 	cmdBroadcast.PersistentFlags().StringSliceVarP(&options.localAddrs, "local-addr", "l", []string{}, "local IP address to connect from")
 	cmdBroadcast.PersistentFlags().StringSliceVarP(&options.workerAddrs, "worker-addr", "w", []string{}, "worker address to distribute connections to")
 	cmdBroadcast.PersistentFlags().StringVarP(&options.serverType, "server-type", "", "json", "server type to connect to (json, binary, actioncable, phoenix)")
@@ -81,6 +83,7 @@ func main() {
 	cmdBroadcast.Flags().IntVarP(&options.stepsDelay, "steps-delay", "", 0, "Sleep for seconds between steps")
 	cmdBroadcast.Flags().Float64VarP(&options.commandDelay, "command-delay", "", 0, "Sleep for seconds before sending client command")
 	cmdBroadcast.Flags().IntVarP(&options.commandDelayChance, "command-delay-chance", "", 100, "The percentage of commands to add delay to")
+	cmdBroadcast.PersistentFlags().StringVarP(&options.channel, "channel", "", "{\"channel\":\"BenchmarkChannel\"}", "Action Cable channel identifier")
 	rootCmd.AddCommand(cmdBroadcast)
 
 	cmdWorker := &cobra.Command{
