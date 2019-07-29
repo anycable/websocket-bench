@@ -2,9 +2,13 @@ package benchmark
 
 import (
 	"fmt"
+	"math"
 	"math/rand"
 	"strings"
+	"sync"
 	"time"
+
+	"github.com/cheggaaa/pb/v3"
 )
 
 type Benchmark struct {
@@ -59,17 +63,21 @@ func (b *Benchmark) Run() error {
 	if b.InitialClients == 0 {
 		b.InitialClients = b.StepSize
 	}
-	if err := b.startClients(b.ServerType, b.InitialClients); err != nil {
-		return err
-	}
+
+	b.startClients(b.ServerType, b.InitialClients)
 
 	stepNum := 0
+	drop := 0
 
 	finished := false
 
 	for {
 
 		stepNum++
+
+		stepDrop := 0
+
+		bar := pb.StartNew(b.SampleSize)
 
 		inProgress := 0
 		for i := 0; i < b.Concurrent; i++ {
@@ -80,16 +88,17 @@ func (b *Benchmark) Run() error {
 		}
 
 		var rttAgg rttAggregate
-		for rttAgg.Count() < b.SampleSize {
+		for rttAgg.Count()+stepDrop < b.SampleSize {
 			select {
 			case result := <-b.rttResultChan:
 				rttAgg.Add(result)
+				bar.Increment()
 				inProgress--
-			case err := <-b.errChan:
-				return err
+			case <-b.errChan:
+				stepDrop++
 			}
 
-			if rttAgg.Count()+inProgress < b.SampleSize {
+			if rttAgg.Count()+inProgress+stepDrop < b.SampleSize {
 				if err := b.sendToRandomClient(); err != nil {
 					return err
 				}
@@ -97,7 +106,11 @@ func (b *Benchmark) Run() error {
 			}
 		}
 
-		expectedRxBroadcastCount += len(b.clients) * b.SampleSize
+		bar.Finish()
+
+		drop += stepDrop
+
+		expectedRxBroadcastCount += (len(b.clients) - drop) * b.SampleSize
 
 		if (b.TotalSteps > 0 && b.TotalSteps == stepNum) || (b.TotalSteps == 0 && b.LimitRTT < rttAgg.Percentile(b.LimitPercentile)) {
 			finished = true
@@ -130,7 +143,7 @@ func (b *Benchmark) Run() error {
 		}
 
 		err := b.ResultRecorder.Record(
-			len(b.clients),
+			len(b.clients)-drop,
 			b.LimitPercentile,
 			rttAgg.Percentile(b.LimitPercentile),
 			rttAgg.Min(),
@@ -153,23 +166,44 @@ func (b *Benchmark) Run() error {
 			time.Sleep(b.StepDelay)
 		}
 
-		if err := b.startClients(b.ServerType, b.StepSize); err != nil {
-			return err
-		}
+		b.startClients(b.ServerType, b.StepSize)
 	}
 }
 
-func (b *Benchmark) startClients(serverType string, count int) error {
-	for i := 0; i < count; i++ {
-		cp := b.ClientPools[i%len(b.ClientPools)]
-		client, err := cp.New(len(b.clients), b.WebsocketURL, b.WebsocketOrigin, b.ServerType, b.rttResultChan, b.errChan, b.payloadPadding)
-		if err != nil {
-			return err
+func (b *Benchmark) startClients(serverType string, total int) {
+	bar := pb.Simple.Start(total)
+	created := 0
+	concurrent := 100
+	counter := len(b.clients)
+
+	for created < total {
+		var waitgroup sync.WaitGroup
+		var mu sync.Mutex
+
+		toCreate := int(math.Min(float64(concurrent), float64(total-created)))
+
+		for i := 0; i < toCreate; i++ {
+			waitgroup.Add(1)
+
+			go func() {
+				cp := b.ClientPools[i%len(b.ClientPools)]
+				client, err := cp.New(counter, b.WebsocketURL, b.WebsocketOrigin, b.ServerType, b.rttResultChan, b.errChan, b.payloadPadding)
+
+				if err != nil {
+					b.errChan <- err
+				}
+				mu.Lock()
+				b.clients = append(b.clients, client)
+				bar.Increment()
+				mu.Unlock()
+				waitgroup.Done()
+			}()
 		}
-		b.clients = append(b.clients, client)
+		waitgroup.Wait()
+		created += toCreate
 	}
 
-	return nil
+	bar.Finish()
 }
 
 func (b *Benchmark) randomClient() Client {

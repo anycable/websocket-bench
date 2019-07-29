@@ -187,6 +187,7 @@ func (c *localClient) rx() {
 type LocalClientPool struct {
 	laddr   *net.TCPAddr
 	clients map[int]*localClient
+	mu      sync.Mutex
 }
 
 func NewLocalClientPool(laddr *net.TCPAddr) *LocalClientPool {
@@ -208,7 +209,9 @@ func (lcp *LocalClientPool) New(
 		return nil, err
 	}
 
+	lcp.mu.Lock()
 	lcp.clients[id] = c
+	lcp.mu.Unlock()
 
 	return c, nil
 }
