@@ -5,12 +5,18 @@ import (
 	"fmt"
 	"io"
 	"net"
-	"strconv"
 	"sync"
 	"time"
 
 	"golang.org/x/net/websocket"
 )
+
+var RemoteAddr struct {
+	Addr   *net.TCPAddr
+	Host   string
+	Config *websocket.Config
+	Secure bool
+}
 
 const (
 	MsgServerEcho            = 'e'
@@ -85,44 +91,23 @@ func newLocalClient(
 		payloadPadding: padding,
 	}
 
-	config, err := websocket.NewConfig(dest, origin)
-	if err != nil {
-		return nil, err
-	}
-
-	host, port, err := net.SplitHostPort(config.Location.Host)
-	if err != nil {
-		return nil, err
-	}
-
-	destIPs, err := net.LookupHost(host)
-	if err != nil {
-		return nil, err
-	}
-
-	nport, err := strconv.ParseUint(port, 10, 16)
-	if err != nil {
-		return nil, err
-	}
-
-	raddr := net.TCPAddr{IP: net.ParseIP(destIPs[0]), Port: int(nport)}
-	tcpConn, err := net.DialTCP("tcp", c.laddr, &raddr)
+	tcpConn, err := net.DialTCP("tcp", c.laddr, RemoteAddr.Addr)
 	if err != nil {
 		return nil, err
 	}
 
 	var conn io.ReadWriteCloser
 
-	if config.Location.Scheme == "wss" {
+	if RemoteAddr.Secure {
 		conn = tls.Client(tcpConn, &tls.Config{
 			InsecureSkipVerify: true,
-			ServerName:         host,
+			ServerName:         RemoteAddr.Host,
 		})
 	} else {
 		conn = tcpConn
 	}
 
-	c.conn, err = websocket.NewClient(config, conn)
+	c.conn, err = websocket.NewClient(RemoteAddr.Config, conn)
 	if err != nil {
 		return nil, err
 	}

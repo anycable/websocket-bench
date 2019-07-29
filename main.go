@@ -131,6 +131,23 @@ func Stress(cmd *cobra.Command, args []string) {
 	config.CommandDelayChance = options.commandDelayChance
 	config.ResultRecorder = benchmark.NewTextResultRecorder(os.Stdout)
 
+	benchmark.CableConfig.Channel = options.channel
+
+	wsconfig, err := websocket.NewConfig(config.WebsocketURL, config.WebsocketOrigin)
+	if err != nil {
+		panic(fmt.Errorf("failed to generate WS config: %v", err))
+	}
+
+	benchmark.RemoteAddr.Config = wsconfig
+	benchmark.RemoteAddr.Secure = wsconfig.Location.Scheme == "wss"
+
+	if raddr, host, err := parseRemoteAddr(wsconfig.Location.Host); err != nil {
+		panic(fmt.Errorf("failed to parse remote address: %v", err))
+	} else {
+		benchmark.RemoteAddr.Addr = raddr
+		benchmark.RemoteAddr.Host = host
+	}
+
 	localAddrs := parseTCPAddrs(options.localAddrs)
 	for _, a := range localAddrs {
 		config.ClientPools = append(config.ClientPools, benchmark.NewLocalClientPool(a))
@@ -170,4 +187,23 @@ func parseTCPAddrs(stringAddrs []string) []*net.TCPAddr {
 	}
 
 	return tcpAddrs
+}
+
+func parseRemoteAddr(url string) (*net.TCPAddr, string, error) {
+	host, port, err := net.SplitHostPort(url)
+	if err != nil {
+		return nil, "", err
+	}
+
+	destIPs, err := net.LookupHost(host)
+	if err != nil {
+		return nil, "", err
+	}
+
+	nport, err := strconv.ParseUint(port, 10, 16)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return &net.TCPAddr{IP: net.ParseIP(destIPs[0]), Port: int(nport)}, host, nil
 }
