@@ -1,10 +1,12 @@
 package benchmark
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"golang.org/x/net/websocket"
@@ -17,6 +19,7 @@ var CableConfig struct {
 type ActionCableServerAdapter struct {
 	conn      *websocket.Conn
 	connected bool
+	mu        sync.Mutex
 }
 
 type acsaMsg struct {
@@ -32,29 +35,49 @@ func (acsa *ActionCableServerAdapter) Startup() error {
 	return nil
 }
 
-func (acsa *ActionCableServerAdapter) EnsureConnected() error {
+func (acsa *ActionCableServerAdapter) EnsureConnected(ctx context.Context) error {
+	acsa.mu.Lock()
+	defer acsa.mu.Unlock()
+
 	if acsa.connected {
 		return nil
 	}
 
-	welcomeMsg, err := acsa.receiveIgnoringPing()
-	if err != nil {
+	resChan := make(chan error)
+
+	go func() {
+		welcomeMsg, err := acsa.receiveIgnoringPing()
+		if err != nil {
+			resChan <- err
+			return
+		}
+		if welcomeMsg.Type != "welcome" {
+			resChan <- fmt.Errorf("expected welcome msg, got %v", welcomeMsg)
+			return
+		}
+
+		err = websocket.JSON.Send(acsa.conn, &acsaMsg{
+			Command:    "subscribe",
+			Identifier: CableConfig.Channel,
+		})
+		if err != nil {
+			resChan <- err
+			return
+		}
+
+		acsa.connected = true
+		resChan <- nil
+	}()
+
+	select {
+	case <-ctx.Done():
+		return errors.New("Connection timeout exceeded")
+	case err := <-resChan:
+		if err != nil {
+			acsa.connected = true
+		}
 		return err
 	}
-	if welcomeMsg.Type != "welcome" {
-		return fmt.Errorf("expected welcome msg, got %v", welcomeMsg)
-	}
-
-	err = websocket.JSON.Send(acsa.conn, &acsaMsg{
-		Command:    "subscribe",
-		Identifier: CableConfig.Channel,
-	})
-	if err != nil {
-		return err
-	}
-
-	acsa.connected = true
-	return nil
 }
 
 func (acsa *ActionCableServerAdapter) SendEcho(payload *Payload) error {
@@ -84,7 +107,14 @@ func (acsa *ActionCableServerAdapter) SendBroadcast(payload *Payload) error {
 }
 
 func (acsa *ActionCableServerAdapter) Receive() (*serverSentMsg, error) {
-	acsa.EnsureConnected()
+	ctx, cancel := context.WithTimeout(context.Background(), ConnectionTimeout)
+	defer cancel()
+
+	err := acsa.EnsureConnected(ctx)
+
+	if err != nil {
+		return nil, err
+	}
 
 	msg, err := acsa.receiveIgnoringPing()
 	if err != nil {

@@ -31,7 +31,7 @@ func (trr *TextResultRecorder) Record(
 ) error {
 	_, err := fmt.Fprintf(trr.w,
 		"[%s] clients: %5d    %dper-rtt: %3dms    min-rtt: %3dms    median-rtt: %3dms    max-rtt: %3dms\n",
-		time.Now().UTC().Format(time.RFC3339),
+		time.Now().Format(time.RFC3339),
 		clientCount,
 		limitPercentile,
 		roundToMS(rttPercentile),

@@ -50,7 +50,7 @@ func (b *ConnectBenchmark) Run() error {
 				bar.Increment()
 				resAgg.Add(result)
 			case err := <-b.errChan:
-				fmt.Printf("drop %v\n", err)
+				debug(fmt.Sprintf("error: %v", err))
 				stepDrop++
 				bar.Increment()
 			}
@@ -125,8 +125,4 @@ func (b *ConnectBenchmark) startClients(num int, total int) {
 		waitgroup.Wait()
 		created += toCreate
 	}
-}
-
-func printNow(label string) {
-	fmt.Printf("[%s] %s\n", time.Now(), label)
 }

@@ -1,15 +1,19 @@
 package benchmark
 
 import (
+	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"golang.org/x/net/websocket"
 )
 
 type ActionCableServerConnectAdapter struct {
-	conn     *websocket.Conn
-	initTime time.Time
+	conn      *websocket.Conn
+	initTime  time.Time
+	connected bool
+	mu        sync.Mutex
 }
 
 func (acsa *ActionCableServerConnectAdapter) Startup() error {
@@ -18,33 +22,18 @@ func (acsa *ActionCableServerConnectAdapter) Startup() error {
 
 func (acsa *ActionCableServerConnectAdapter) Connected(ts time.Time) error {
 	acsa.initTime = ts
+	acsa.connected = false
 	return nil
 }
 
 func (acsa *ActionCableServerConnectAdapter) Receive() (*serverSentMsg, error) {
-	welcomeMsg, err := acsa.receiveIgnoringPing()
+	ctx, cancel := context.WithTimeout(context.Background(), ConnectionTimeout)
+	defer cancel()
+
+	err := acsa.EnsureConnected(ctx)
+
 	if err != nil {
 		return nil, err
-	}
-	if welcomeMsg.Type != "welcome" {
-		return nil, fmt.Errorf("expected welcome msg, got %v", welcomeMsg)
-	}
-
-	err = websocket.JSON.Send(acsa.conn, &acsaMsg{
-		Command:    "subscribe",
-		Identifier: CableConfig.Channel,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	confirmMsg, err := acsa.receiveIgnoringPing()
-	if err != nil {
-		return nil, err
-	}
-
-	if confirmMsg.Type != "confirm_subscription" {
-		return nil, fmt.Errorf("expected confirm msg, got %v", confirmMsg)
 	}
 
 	payload := &Payload{}
@@ -76,5 +65,60 @@ func (acsa *ActionCableServerConnectAdapter) receiveIgnoringPing() (*acsaMsg, er
 		}
 
 		return &msg, nil
+	}
+}
+
+func (acsa *ActionCableServerConnectAdapter) EnsureConnected(ctx context.Context) error {
+	acsa.mu.Lock()
+	defer acsa.mu.Unlock()
+
+	if acsa.connected {
+		return nil
+	}
+
+	resChan := make(chan error)
+
+	go func() {
+		welcomeMsg, err := acsa.receiveIgnoringPing()
+		if err != nil {
+			resChan <- err
+			return
+		}
+		if welcomeMsg.Type != "welcome" {
+			resChan <- fmt.Errorf("expected welcome msg, got %v", welcomeMsg)
+			return
+		}
+
+		err = websocket.JSON.Send(acsa.conn, &acsaMsg{
+			Command:    "subscribe",
+			Identifier: CableConfig.Channel,
+		})
+		if err != nil {
+			resChan <- err
+			return
+		}
+
+		confirmMsg, err := acsa.receiveIgnoringPing()
+		if err != nil {
+			resChan <- err
+			return
+		}
+
+		if confirmMsg.Type != "confirm_subscription" {
+			resChan <- fmt.Errorf("expected confirm msg, got %v", confirmMsg)
+			return
+		}
+
+		resChan <- nil
+	}()
+
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("Connection timeout exceeded: started at %s, now %s", acsa.initTime.Format(time.RFC3339), time.Now().Format(time.RFC3339))
+	case err := <-resChan:
+		if err != nil {
+			acsa.connected = true
+		}
+		return err
 	}
 }

@@ -11,6 +11,10 @@ import (
 	"github.com/cheggaaa/pb/v3"
 )
 
+const (
+	ConnectionTimeout = 120 * time.Second
+)
+
 type Benchmark struct {
 	errChan       chan error
 	rttResultChan chan time.Duration
@@ -244,4 +248,12 @@ func promptToContinue() {
 	fmt.Print("Press any key to continue to the next step")
 	var input string
 	fmt.Scanln(&input)
+}
+
+func printNow(label string) {
+	fmt.Printf("[%s] %s\n", time.Now().Format(time.RFC3339), label)
+}
+
+func debug(msg string) {
+	fmt.Printf("DEBUG [%s] %s\n", time.Now().Format(time.RFC3339), msg)
 }

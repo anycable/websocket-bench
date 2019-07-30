@@ -26,11 +26,17 @@ func (agg *rttAggregate) Count() int {
 }
 
 func (agg *rttAggregate) Min() time.Duration {
+	if agg.Count() == 0 {
+		return 0
+	}
 	agg.Sort()
 	return agg.samples[0]
 }
 
 func (agg *rttAggregate) Max() time.Duration {
+	if agg.Count() == 0 {
+		return 0
+	}
 	agg.Sort()
 	return agg.samples[len(agg.samples)-1]
 }
@@ -45,6 +51,11 @@ func (agg *rttAggregate) Percentile(p int) time.Duration {
 	agg.Sort()
 
 	rank := p * len(agg.samples) / 100
+
+	if agg.Count() == 0 {
+		return 0
+	}
+
 	return agg.samples[rank]
 }
 
