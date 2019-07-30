@@ -50,7 +50,7 @@ func (b *ConnectBenchmark) Run() error {
 				bar.Increment()
 				resAgg.Add(result)
 			case err := <-b.errChan:
-				fmt.Printf("drop %v", err)
+				fmt.Printf("drop %v\n", err)
 				stepDrop++
 				bar.Increment()
 			}

@@ -2,6 +2,7 @@ package benchmark
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -122,6 +123,10 @@ func (acsa *ActionCableServerAdapter) receiveIgnoringPing() (*acsaMsg, error) {
 		// fmt.Printf("acsa %p msg: %#v\n", acsa, msg)
 		if msg.Type == "ping" || msg.Type == "confirm_subscription" {
 			continue
+		}
+
+		if msg.Type == "reject_subscription" {
+			return nil, errors.New("Subscription rejected")
 		}
 
 		return &msg, nil
