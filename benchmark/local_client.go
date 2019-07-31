@@ -114,6 +114,8 @@ func newLocalClient(
 		return nil, err
 	}
 
+	c.conn.MaxPayloadBytes = 1000000
+
 	switch serverType {
 	case "json":
 		c.serverAdapter = &StandardServerAdapter{conn: c.conn}

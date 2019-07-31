@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	ConnectionTimeout = 120 * time.Second
+	ConnectionTimeout = 60 * time.Second
 )
 
 type Benchmark struct {
@@ -98,8 +98,9 @@ func (b *Benchmark) Run() error {
 				rttAgg.Add(result)
 				bar.Increment()
 				inProgress--
-			case <-b.errChan:
+			case err := <-b.errChan:
 				stepDrop++
+				debug(fmt.Sprintf("error: %v", err))
 			}
 
 			if rttAgg.Count()+inProgress+stepDrop < b.SampleSize {

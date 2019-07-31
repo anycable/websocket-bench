@@ -81,6 +81,17 @@ func (acsa *ActionCableServerAdapter) EnsureConnected(ctx context.Context) error
 }
 
 func (acsa *ActionCableServerAdapter) SendEcho(payload *Payload) error {
+	if !acsa.connected {
+		ctx, cancel := context.WithTimeout(context.Background(), ConnectionTimeout)
+		defer cancel()
+
+		err := acsa.EnsureConnected(ctx)
+
+		if err != nil {
+			return err
+		}
+	}
+
 	data, err := json.Marshal(map[string]interface{}{"action": "echo", "payload": payloadTojsonPayload(payload)})
 	if err != nil {
 		return err
@@ -94,6 +105,17 @@ func (acsa *ActionCableServerAdapter) SendEcho(payload *Payload) error {
 }
 
 func (acsa *ActionCableServerAdapter) SendBroadcast(payload *Payload) error {
+	if !acsa.connected {
+		ctx, cancel := context.WithTimeout(context.Background(), ConnectionTimeout)
+		defer cancel()
+
+		err := acsa.EnsureConnected(ctx)
+
+		if err != nil {
+			return err
+		}
+	}
+
 	data, err := json.Marshal(map[string]interface{}{"action": "broadcast", "payload": payloadTojsonPayload(payload)})
 	if err != nil {
 		return err
@@ -107,13 +129,15 @@ func (acsa *ActionCableServerAdapter) SendBroadcast(payload *Payload) error {
 }
 
 func (acsa *ActionCableServerAdapter) Receive() (*serverSentMsg, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), ConnectionTimeout)
-	defer cancel()
+	if !acsa.connected {
+		ctx, cancel := context.WithTimeout(context.Background(), ConnectionTimeout)
+		defer cancel()
 
-	err := acsa.EnsureConnected(ctx)
+		err := acsa.EnsureConnected(ctx)
 
-	if err != nil {
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	msg, err := acsa.receiveIgnoringPing()
