@@ -35,6 +35,7 @@ type Config struct {
 	InitialClients     int
 	StepSize           int
 	Concurrent         int
+	ConcurrentConnect  int
 	SampleSize         int
 	LimitPercentile    int
 	LimitRTT           time.Duration
@@ -68,7 +69,7 @@ func (b *Benchmark) Run() error {
 		b.InitialClients = b.StepSize
 	}
 
-	b.startClients(b.ServerType, b.InitialClients)
+	b.startClients(b.ServerType, b.InitialClients, b.ConcurrentConnect)
 
 	stepNum := 0
 	drop := 0
@@ -171,14 +172,13 @@ func (b *Benchmark) Run() error {
 			time.Sleep(b.StepDelay)
 		}
 
-		b.startClients(b.ServerType, b.StepSize)
+		b.startClients(b.ServerType, b.StepSize, b.ConcurrentConnect)
 	}
 }
 
-func (b *Benchmark) startClients(serverType string, total int) {
+func (b *Benchmark) startClients(serverType string, total int, concurrent int) {
 	bar := pb.Simple.Start(total)
 	created := 0
-	concurrent := 100
 	counter := len(b.clients)
 
 	for created < total {

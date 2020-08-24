@@ -18,6 +18,7 @@ var options struct {
 	websocketOrigin    string
 	serverType         string
 	concurrent         int
+	concurrentConnect  int
 	sampleSize         int
 	initialClients     int
 	stepSize           int
@@ -75,6 +76,7 @@ func main() {
 	cmdBroadcast.PersistentFlags().StringSliceVarP(&options.workerAddrs, "worker-addr", "w", []string{}, "worker address to distribute connections to")
 	cmdBroadcast.PersistentFlags().StringVarP(&options.serverType, "server-type", "", "json", "server type to connect to (json, binary, actioncable, phoenix)")
 	cmdBroadcast.Flags().IntVarP(&options.concurrent, "concurrent", "c", 4, "concurrent broadcast requests")
+	cmdBroadcast.Flags().IntVarP(&options.concurrentConnect, "connect-concurrent", "", 100, "concurrent connection initialization requests")
 	cmdBroadcast.Flags().IntVarP(&options.sampleSize, "sample-size", "s", 20, "number of broadcasts in a sample")
 	cmdBroadcast.Flags().IntVarP(&options.initialClients, "initial-clients", "", 0, "initial number of clients")
 	cmdBroadcast.Flags().IntVarP(&options.stepSize, "step-size", "", 5000, "number of clients to increase each step")
@@ -144,6 +146,7 @@ func Stress(cmd *cobra.Command, args []string) {
 	config.PayloadPaddingSize = options.payloadPaddingSize
 	config.StepSize = options.stepSize
 	config.Concurrent = options.concurrent
+	config.ConcurrentConnect = options.concurrentConnect
 	config.SampleSize = options.sampleSize
 	config.InitialClients = options.initialClients
 	config.LimitPercentile = options.limitPercentile
