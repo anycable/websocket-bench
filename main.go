@@ -37,9 +37,23 @@ var options struct {
 	channel            string
 }
 
-func main() {
+var (
+	version string
+	commit  string
+)
 
-	rootCmd := &cobra.Command{Use: "websocket-bench", Short: "websocket benchmark tool"}
+func init() {
+	if version == "" {
+		version = "0.2.1"
+	}
+
+	if commit != "" {
+		version = version + "-" + commit
+	}
+}
+
+func main() {
+	rootCmd := &cobra.Command{Use: "websocket-bench", Short: fmt.Sprintf("websocket benchmark tool (%s)", version)}
 
 	cmdEcho := &cobra.Command{
 		Use:   "echo URL",
