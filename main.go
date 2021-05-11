@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -35,6 +38,8 @@ var options struct {
 	commandDelay       float64
 	commandDelayChance int
 	channel            string
+	format             string
+	filename           string
 }
 
 var (
@@ -76,6 +81,8 @@ func main() {
 	cmdEcho.Flags().IntVarP(&options.stepsDelay, "steps-delay", "", 0, "Sleep for seconds between steps")
 	cmdEcho.Flags().Float64VarP(&options.commandDelay, "command-delay", "", 0, "Sleep for seconds before sending client command")
 	cmdEcho.Flags().IntVarP(&options.commandDelayChance, "command-delay-chance", "", 100, "The percentage of commands to add delay to")
+	cmdEcho.Flags().StringVarP(&options.format, "format", "f", "", "output format")
+	cmdEcho.Flags().StringVarP(&options.filename, "filename", "n", "", "output filename")
 	cmdEcho.PersistentFlags().StringVarP(&options.channel, "channel", "", "{\"channel\":\"BenchmarkChannel\"}", "Action Cable channel identifier")
 	rootCmd.AddCommand(cmdEcho)
 
@@ -102,6 +109,8 @@ func main() {
 	cmdBroadcast.Flags().IntVarP(&options.stepsDelay, "steps-delay", "", 0, "Sleep for seconds between steps")
 	cmdBroadcast.Flags().Float64VarP(&options.commandDelay, "command-delay", "", 0, "Sleep for seconds before sending client command")
 	cmdBroadcast.Flags().IntVarP(&options.commandDelayChance, "command-delay-chance", "", 100, "The percentage of commands to add delay to")
+	cmdBroadcast.Flags().StringVarP(&options.format, "format", "f", "", "output format")
+	cmdBroadcast.Flags().StringVarP(&options.filename, "filename", "n", "", "output filename")
 	cmdBroadcast.PersistentFlags().StringVarP(&options.channel, "channel", "", "{\"channel\":\"BenchmarkChannel\"}", "Action Cable channel identifier")
 	rootCmd.AddCommand(cmdBroadcast)
 
@@ -132,6 +141,8 @@ func main() {
 	cmdConnect.Flags().IntVarP(&options.stepsDelay, "steps-delay", "", 0, "Sleep for seconds between steps")
 	cmdConnect.Flags().Float64VarP(&options.commandDelay, "command-delay", "", 0, "Sleep for seconds before sending client command")
 	cmdConnect.Flags().IntVarP(&options.commandDelayChance, "command-delay-chance", "", 100, "The percentage of commands to add delay to")
+	cmdConnect.Flags().StringVarP(&options.format, "format", "f", "", "output format")
+	cmdConnect.Flags().StringVarP(&options.filename, "filename", "n", "", "output filename")
 	cmdConnect.PersistentFlags().StringVarP(&options.channel, "channel", "", "{\"channel\":\"BenchmarkChannel\"}", "Action Cable channel identifier")
 	rootCmd.AddCommand(cmdConnect)
 
@@ -170,7 +181,21 @@ func Stress(cmd *cobra.Command, args []string) {
 	config.StepDelay = time.Duration(options.stepsDelay) * time.Second
 	config.CommandDelay = time.Duration(options.commandDelay) * time.Second
 	config.CommandDelayChance = options.commandDelayChance
-	config.ResultRecorder = benchmark.NewTextResultRecorder(os.Stdout)
+
+	var writer io.Writer
+	if options.filename == "" {
+		writer = os.Stdout
+	} else {
+		var cancel context.CancelFunc
+		writer, cancel = openFileWriter()
+		defer cancel()
+	}
+
+	if options.format == "json" {
+		config.ResultRecorder = benchmark.NewJSONResultRecorder(writer)
+	} else {
+		config.ResultRecorder = benchmark.NewTextResultRecorder(writer)
+	}
 
 	benchmark.CableConfig.Channel = options.channel
 
@@ -215,6 +240,9 @@ func Stress(cmd *cobra.Command, args []string) {
 			log.Fatal(err)
 		}
 	}
+	if err := config.ResultRecorder.Flush(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func Work(cmd *cobra.Command, args []string) {
@@ -255,4 +283,19 @@ func parseRemoteAddr(url string) (*net.TCPAddr, string, error) {
 	}
 
 	return &net.TCPAddr{IP: net.ParseIP(destIPs[0]), Port: int(nport)}, host, nil
+}
+
+func openFileWriter() (io.Writer, context.CancelFunc) {
+	var err error
+	dir := filepath.Dir(options.filename)
+	if _, err := os.Stat(dir); err != nil {
+		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+			panic(fmt.Errorf("failed to create output dir: %v", err))
+		}
+	}
+	file, err := os.OpenFile(options.filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, os.ModePerm)
+	if err != nil {
+		panic(fmt.Errorf("failed to open output file: %v", err))
+	}
+	return file, func() { _ = file.Close() }
 }
