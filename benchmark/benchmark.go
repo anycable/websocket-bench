@@ -140,10 +140,14 @@ func (b *Benchmark) Run() error {
 					totalRxBroadcastCount += count
 				}
 				if totalRxBroadcastCount < expectedRxBroadcastCount {
-					fmt.Printf("Missing received broadcasts: expected %d, got %d", expectedRxBroadcastCount, totalRxBroadcastCount)
+					b.ResultRecorder.Message(
+						fmt.Sprintf("Missing received broadcasts: expected %d, got %d", expectedRxBroadcastCount, totalRxBroadcastCount),
+					)
 				}
 				if totalRxBroadcastCount > expectedRxBroadcastCount {
-					fmt.Printf("Extra received broadcasts: expected %d, got %d", expectedRxBroadcastCount, totalRxBroadcastCount)
+					b.ResultRecorder.Message(
+						fmt.Sprintf("Extra received broadcasts: expected %d, got %d", expectedRxBroadcastCount, totalRxBroadcastCount),
+					)
 				}
 			}
 		}
