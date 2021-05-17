@@ -14,9 +14,16 @@ type ActionCableServerConnectAdapter struct {
 	initTime  time.Time
 	connected bool
 	mu        sync.Mutex
+	codec     websocket.Codec
 }
 
 func (acsa *ActionCableServerConnectAdapter) Startup() error {
+
+	if CableConfig.Encoding == "json" {
+		acsa.codec = websocket.JSON
+	} else {
+		acsa.codec = MsgPackCodec
+	}
 	return nil
 }
 
@@ -55,7 +62,7 @@ func (acsa *ActionCableServerConnectAdapter) SendBroadcast(payload *Payload) err
 func (acsa *ActionCableServerConnectAdapter) receiveIgnoringPing() (*acsaMsg, error) {
 	for {
 		var msg acsaMsg
-		err := websocket.JSON.Receive(acsa.conn, &msg)
+		err := acsa.codec.Receive(acsa.conn, &msg)
 		if err != nil {
 			return nil, err
 		}
@@ -89,7 +96,7 @@ func (acsa *ActionCableServerConnectAdapter) EnsureConnected(ctx context.Context
 			return
 		}
 
-		err = websocket.JSON.Send(acsa.conn, &acsaMsg{
+		err = acsa.codec.Send(acsa.conn, &acsaMsg{
 			Command:    "subscribe",
 			Identifier: CableConfig.Channel,
 		})
