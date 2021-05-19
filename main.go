@@ -19,6 +19,7 @@ import (
 
 var options struct {
 	websocketOrigin     string
+	websocketProtocol   string
 	serverType          string
 	concurrent          int
 	concurrentConnect   int
@@ -71,6 +72,7 @@ func main() {
 	cmdEcho.PersistentFlags().StringSliceVarP(&options.localAddrs, "local-addr", "l", []string{}, "local IP address to connect from")
 	cmdEcho.PersistentFlags().StringVarP(&options.serverType, "server-type", "", "json", "server type to connect to (json, binary, actioncable, phoenix)")
 	cmdEcho.PersistentFlags().StringSliceVarP(&options.workerAddrs, "worker-addr", "w", []string{}, "worker address to distribute connections to")
+	cmdEcho.PersistentFlags().StringVarP(&options.websocketProtocol, "sub-protocol", "", "", "WS sub-protocol to use")
 	cmdEcho.Flags().IntVarP(&options.concurrent, "concurrent", "c", 50, "concurrent echo requests")
 	cmdEcho.Flags().IntVarP(&options.sampleSize, "sample-size", "s", 10000, "number of echoes in a sample")
 	cmdEcho.Flags().IntVarP(&options.stepSize, "step-size", "", 5000, "number of clients to increase each step")
@@ -98,6 +100,7 @@ func main() {
 	cmdBroadcast.PersistentFlags().StringSliceVarP(&options.localAddrs, "local-addr", "l", []string{}, "local IP address to connect from")
 	cmdBroadcast.PersistentFlags().StringSliceVarP(&options.workerAddrs, "worker-addr", "w", []string{}, "worker address to distribute connections to")
 	cmdBroadcast.PersistentFlags().StringVarP(&options.serverType, "server-type", "", "json", "server type to connect to (json, binary, actioncable, phoenix)")
+	cmdBroadcast.PersistentFlags().StringVarP(&options.websocketProtocol, "sub-protocol", "", "", "WS sub-protocol to use")
 	cmdBroadcast.Flags().IntVarP(&options.concurrent, "concurrent", "c", 4, "concurrent broadcast requests")
 	cmdBroadcast.Flags().IntVarP(&options.concurrentConnect, "connect-concurrent", "", 100, "concurrent connection initialization requests")
 	cmdBroadcast.Flags().IntVarP(&options.sampleSize, "sample-size", "s", 20, "number of broadcasts in a sample")
@@ -207,6 +210,10 @@ func Stress(cmd *cobra.Command, args []string) {
 	wsconfig, err := websocket.NewConfig(config.WebsocketURL, config.WebsocketOrigin)
 	if err != nil {
 		panic(fmt.Errorf("failed to generate WS config: %v", err))
+	}
+
+	if options.websocketProtocol != "" {
+		wsconfig.Protocol = []string{options.websocketProtocol}
 	}
 
 	benchmark.RemoteAddr.Config = wsconfig

@@ -29,6 +29,7 @@ type Benchmark struct {
 type Config struct {
 	WebsocketURL       string
 	WebsocketOrigin    string
+	WebsocketProtocol  string
 	ServerType         string
 	ClientCmd          int
 	PayloadPaddingSize int
