@@ -27,26 +27,27 @@ type Benchmark struct {
 }
 
 type Config struct {
-	WebsocketURL       string
-	WebsocketOrigin    string
-	WebsocketProtocol  string
-	ServerType         string
-	ClientCmd          int
-	PayloadPaddingSize int
-	InitialClients     int
-	StepSize           int
-	Concurrent         int
-	ConcurrentConnect  int
-	SampleSize         int
-	LimitPercentile    int
-	LimitRTT           time.Duration
-	TotalSteps         int
-	Interactive        bool
-	StepDelay          time.Duration
-	CommandDelay       time.Duration
-	CommandDelayChance int
-	ClientPools        []ClientPool
-	ResultRecorder     ResultRecorder
+	WebsocketURL          string
+	WebsocketOrigin       string
+	WebsocketProtocol     string
+	ServerType            string
+	ClientCmd             int
+	PayloadPaddingSize    int
+	InitialClients        int
+	StepSize              int
+	Concurrent            int
+	ConcurrentConnect     int
+	SampleSize            int
+	LimitPercentile       int
+	LimitRTT              time.Duration
+	TotalSteps            int
+	Interactive           bool
+	StepDelay             time.Duration
+	CommandDelay          time.Duration
+	CommandDelayChance    int
+	WaitBroadcastsSeconds int
+	ClientPools           []ClientPool
+	ResultRecorder        ResultRecorder
 }
 
 func New(config *Config) *Benchmark {
@@ -130,7 +131,7 @@ func (b *Benchmark) Run() error {
 				// does matter when checking at the end that all expected broadcasts
 				// were received. So we wait a little before getting the broadcast
 				// count.
-				time.Sleep(250 * time.Millisecond)
+				time.Sleep(time.Duration(b.WaitBroadcastsSeconds) * time.Second)
 
 				totalRxBroadcastCount := 0
 				for _, c := range b.clients {

@@ -38,6 +38,7 @@ var options struct {
 	stepsDelay          int
 	commandDelay        float64
 	commandDelayChance  int
+	broadastsWait       int
 	channel             string
 	actionCableEncoding string
 	format              string
@@ -114,6 +115,7 @@ func main() {
 	cmdBroadcast.Flags().IntVarP(&options.stepsDelay, "steps-delay", "", 0, "Sleep for seconds between steps")
 	cmdBroadcast.Flags().Float64VarP(&options.commandDelay, "command-delay", "", 0, "Sleep for seconds before sending client command")
 	cmdBroadcast.Flags().IntVarP(&options.commandDelayChance, "command-delay-chance", "", 100, "The percentage of commands to add delay to")
+	cmdBroadcast.Flags().IntVarP(&options.broadastsWait, "wait-broadcasts", "", 2, "Sleep for seconds after the last step made to collect the broadcasts")
 	cmdBroadcast.Flags().StringVarP(&options.format, "format", "f", "", "output format")
 	cmdBroadcast.Flags().StringVarP(&options.filename, "filename", "n", "", "output filename")
 	cmdBroadcast.Flags().StringVarP(&options.actionCableEncoding, "action-cable-encoding", "", "json", "Action Cable messages encoding (json, msgpack)")
@@ -188,6 +190,7 @@ func Stress(cmd *cobra.Command, args []string) {
 	config.StepDelay = time.Duration(options.stepsDelay) * time.Second
 	config.CommandDelay = time.Duration(options.commandDelay) * time.Second
 	config.CommandDelayChance = options.commandDelayChance
+	config.WaitBroadcastsSeconds = options.broadastsWait
 
 	var writer io.Writer
 	if options.filename == "" {
