@@ -18,28 +18,29 @@ import (
 )
 
 var options struct {
-	websocketOrigin    string
-	serverType         string
-	concurrent         int
-	concurrentConnect  int
-	sampleSize         int
-	initialClients     int
-	stepSize           int
-	limitPercentile    int
-	limitRTT           time.Duration
-	payloadPaddingSize int
-	localAddrs         []string
-	workerListenAddr   string
-	workerListenPort   int
-	workerAddrs        []string
-	totalSteps         int
-	interactive        bool
-	stepsDelay         int
-	commandDelay       float64
-	commandDelayChance int
-	channel            string
-	format             string
-	filename           string
+	websocketOrigin     string
+	serverType          string
+	concurrent          int
+	concurrentConnect   int
+	sampleSize          int
+	initialClients      int
+	stepSize            int
+	limitPercentile     int
+	limitRTT            time.Duration
+	payloadPaddingSize  int
+	localAddrs          []string
+	workerListenAddr    string
+	workerListenPort    int
+	workerAddrs         []string
+	totalSteps          int
+	interactive         bool
+	stepsDelay          int
+	commandDelay        float64
+	commandDelayChance  int
+	channel             string
+	actionCableEncoding string
+	format              string
+	filename            string
 }
 
 var (
@@ -83,6 +84,7 @@ func main() {
 	cmdEcho.Flags().IntVarP(&options.commandDelayChance, "command-delay-chance", "", 100, "The percentage of commands to add delay to")
 	cmdEcho.Flags().StringVarP(&options.format, "format", "f", "", "output format")
 	cmdEcho.Flags().StringVarP(&options.filename, "filename", "n", "", "output filename")
+	cmdEcho.Flags().StringVarP(&options.actionCableEncoding, "action-cable-encoding", "", "json", "Action Cable messages encoding (json, msgpack)")
 	cmdEcho.PersistentFlags().StringVarP(&options.channel, "channel", "", "{\"channel\":\"BenchmarkChannel\"}", "Action Cable channel identifier")
 	rootCmd.AddCommand(cmdEcho)
 
@@ -111,6 +113,7 @@ func main() {
 	cmdBroadcast.Flags().IntVarP(&options.commandDelayChance, "command-delay-chance", "", 100, "The percentage of commands to add delay to")
 	cmdBroadcast.Flags().StringVarP(&options.format, "format", "f", "", "output format")
 	cmdBroadcast.Flags().StringVarP(&options.filename, "filename", "n", "", "output filename")
+	cmdBroadcast.Flags().StringVarP(&options.actionCableEncoding, "action-cable-encoding", "", "json", "Action Cable messages encoding (json, msgpack)")
 	cmdBroadcast.PersistentFlags().StringVarP(&options.channel, "channel", "", "{\"channel\":\"BenchmarkChannel\"}", "Action Cable channel identifier")
 	rootCmd.AddCommand(cmdBroadcast)
 
@@ -143,6 +146,7 @@ func main() {
 	cmdConnect.Flags().IntVarP(&options.commandDelayChance, "command-delay-chance", "", 100, "The percentage of commands to add delay to")
 	cmdConnect.Flags().StringVarP(&options.format, "format", "f", "", "output format")
 	cmdConnect.Flags().StringVarP(&options.filename, "filename", "n", "", "output filename")
+	cmdConnect.Flags().StringVarP(&options.actionCableEncoding, "action-cable-encoding", "", "json", "Action Cable messages encoding (json, msgpack)")
 	cmdConnect.PersistentFlags().StringVarP(&options.channel, "channel", "", "{\"channel\":\"BenchmarkChannel\"}", "Action Cable channel identifier")
 	rootCmd.AddCommand(cmdConnect)
 
@@ -198,6 +202,7 @@ func Stress(cmd *cobra.Command, args []string) {
 	}
 
 	benchmark.CableConfig.Channel = options.channel
+	benchmark.CableConfig.Encoding = options.actionCableEncoding
 
 	wsconfig, err := websocket.NewConfig(config.WebsocketURL, config.WebsocketOrigin)
 	if err != nil {
