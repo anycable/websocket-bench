@@ -13,7 +13,7 @@ import (
 )
 
 var CableConfig struct {
-	Channel string
+	Channel  string
 	Encoding string
 }
 
@@ -35,10 +35,12 @@ type acsaMsg struct {
 func (acsa *ActionCableServerAdapter) Startup() error {
 	acsa.connected = false
 
-	if CableConfig.Encoding == "json" {
-		acsa.codec = websocket.JSON
-	} else {
+	if CableConfig.Encoding == "msgpack" {
 		acsa.codec = MsgPackCodec
+	} else if CableConfig.Encoding == "protobuf" {
+		acsa.codec = ProtoBufCodec
+	} else {
+		acsa.codec = websocket.JSON
 	}
 
 	return nil
@@ -154,6 +156,10 @@ func (acsa *ActionCableServerAdapter) Receive() (*serverSentMsg, error) {
 		return nil, err
 	}
 
+	if msg.Message == nil {
+		panic(fmt.Errorf("Message is nil for %v", msg))
+	}
+
 	message := msg.Message.(map[string]interface{})
 	payloadMap := message["payload"].(map[string]interface{})
 
@@ -165,7 +171,11 @@ func (acsa *ActionCableServerAdapter) Receive() (*serverSentMsg, error) {
 	payload.SendTime = time.Unix(0, unixNanosecond)
 
 	if padding, ok := payloadMap["padding"]; ok {
-		payload.Padding = []byte(padding.(string))
+		paddingJson, err := json.Marshal(padding)
+		if err != nil {
+			return nil, err
+		}
+		payload.Padding = paddingJson
 	}
 
 	msgType, err := ParseMessageType(message["action"].(string))

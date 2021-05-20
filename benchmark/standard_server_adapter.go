@@ -1,6 +1,8 @@
 package benchmark
 
 import (
+	"encoding/json"
+
 	"golang.org/x/net/websocket"
 )
 
@@ -34,7 +36,9 @@ func (ssa *StandardServerAdapter) Receive() (*serverSentMsg, error) {
 		return nil, err
 	}
 
-	msg.Payload, err = stringToBinaryPayload(jsonMsg.Payload.SendTime, jsonMsg.Payload.Padding)
+	payloadStr, _ := json.Marshal(jsonMsg.Payload.Padding)
+
+	msg.Payload, err = stringToBinaryPayload(jsonMsg.Payload.SendTime, string(payloadStr))
 	if err != nil {
 		return nil, err
 	}

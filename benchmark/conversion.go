@@ -3,6 +3,7 @@ package benchmark
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -21,7 +22,14 @@ func ParseMessageType(s string) (byte, error) {
 
 func payloadTojsonPayload(payload *Payload) *jsonPayload {
 	sendTime := strconv.FormatInt(payload.SendTime.UnixNano(), 10)
-	padding := string(payload.Padding)
+	paddingValues := strings.Split(string(payload.Padding), "0")
+
+	padding := make(map[string]interface{})
+
+	for ind, val := range paddingValues {
+		padding[string(ind)] = val
+	}
+
 	return &jsonPayload{SendTime: sendTime, Padding: padding}
 }
 

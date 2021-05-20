@@ -87,7 +87,7 @@ func main() {
 	cmdEcho.Flags().IntVarP(&options.commandDelayChance, "command-delay-chance", "", 100, "The percentage of commands to add delay to")
 	cmdEcho.Flags().StringVarP(&options.format, "format", "f", "", "output format")
 	cmdEcho.Flags().StringVarP(&options.filename, "filename", "n", "", "output filename")
-	cmdEcho.Flags().StringVarP(&options.actionCableEncoding, "action-cable-encoding", "", "json", "Action Cable messages encoding (json, msgpack)")
+	cmdEcho.Flags().StringVarP(&options.actionCableEncoding, "action-cable-encoding", "", "json", "Action Cable messages encoding (json, msgpack, protobuf)")
 	cmdEcho.PersistentFlags().StringVarP(&options.channel, "channel", "", "{\"channel\":\"BenchmarkChannel\"}", "Action Cable channel identifier")
 	rootCmd.AddCommand(cmdEcho)
 
@@ -118,7 +118,7 @@ func main() {
 	cmdBroadcast.Flags().IntVarP(&options.broadastsWait, "wait-broadcasts", "", 2, "Sleep for seconds after the last step made to collect the broadcasts")
 	cmdBroadcast.Flags().StringVarP(&options.format, "format", "f", "", "output format")
 	cmdBroadcast.Flags().StringVarP(&options.filename, "filename", "n", "", "output filename")
-	cmdBroadcast.Flags().StringVarP(&options.actionCableEncoding, "action-cable-encoding", "", "json", "Action Cable messages encoding (json, msgpack)")
+	cmdBroadcast.Flags().StringVarP(&options.actionCableEncoding, "action-cable-encoding", "", "json", "Action Cable messages encoding (json, msgpack, protobuf)")
 	cmdBroadcast.PersistentFlags().StringVarP(&options.channel, "channel", "", "{\"channel\":\"BenchmarkChannel\"}", "Action Cable channel identifier")
 	rootCmd.AddCommand(cmdBroadcast)
 
@@ -151,7 +151,7 @@ func main() {
 	cmdConnect.Flags().IntVarP(&options.commandDelayChance, "command-delay-chance", "", 100, "The percentage of commands to add delay to")
 	cmdConnect.Flags().StringVarP(&options.format, "format", "f", "", "output format")
 	cmdConnect.Flags().StringVarP(&options.filename, "filename", "n", "", "output filename")
-	cmdConnect.Flags().StringVarP(&options.actionCableEncoding, "action-cable-encoding", "", "json", "Action Cable messages encoding (json, msgpack)")
+	cmdConnect.Flags().StringVarP(&options.actionCableEncoding, "action-cable-encoding", "", "json", "Action Cable messages encoding (json, msgpack, protobuf)")
 	cmdConnect.PersistentFlags().StringVarP(&options.channel, "channel", "", "{\"channel\":\"BenchmarkChannel\"}", "Action Cable channel identifier")
 	rootCmd.AddCommand(cmdConnect)
 

@@ -54,8 +54,8 @@ type Payload struct {
 }
 
 type jsonPayload struct {
-	SendTime string `json:"sendTime"`
-	Padding  string `json:"padding,omitempty"`
+	SendTime string      `json:"sendTime"`
+	Padding  interface{} `json:"padding,omitempty"`
 }
 
 // serverSentMsg includes all fields that can be in server sent message
