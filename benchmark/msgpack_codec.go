@@ -2,15 +2,16 @@ package benchmark
 
 import (
 	"bytes"
+
 	"golang.org/x/net/websocket"
 
-	"github.com/vmihailenco/msgpack/v4"
+	"github.com/vmihailenco/msgpack/v5"
 )
 
 func msgPackMarshal(v interface{}) (msg []byte, payloadType byte, err error) {
 	var buf bytes.Buffer
 	enc := msgpack.NewEncoder(&buf)
-	enc.UseJSONTag(true)
+	enc.SetCustomStructTag("json")
 
 	err = enc.Encode(v)
 
@@ -19,7 +20,7 @@ func msgPackMarshal(v interface{}) (msg []byte, payloadType byte, err error) {
 
 func msgPackUnmarshal(msg []byte, payloadType byte, v interface{}) (err error) {
 	dec := msgpack.NewDecoder(bytes.NewReader(msg))
-	dec.UseJSONTag(true)
+	dec.SetCustomStructTag("json")
 
 	err = dec.Decode(v)
 

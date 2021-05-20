@@ -8,7 +8,7 @@ import (
 	"golang.org/x/net/websocket"
 
 	"github.com/anycable/websocket-bench/action_cable"
-	"github.com/vmihailenco/msgpack/v4"
+	"github.com/vmihailenco/msgpack/v5"
 )
 
 func protobufMarshal(v interface{}) (msg []byte, payloadType byte, err error) {
