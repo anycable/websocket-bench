@@ -2,6 +2,12 @@ module github.com/anycable/websocket-bench
 
 go 1.16
 
+// See https://github.com/honeycombio/libhoney-go/pull/79/files
+replace (
+	github.com/vmihailenco/msgpack/v4 => gopkg.in/vmihailenco/msgpack.v4 v4.3.12
+	gopkg.in/vmihailenco/msgpack.v4 => github.com/vmihailenco/msgpack/v4 v4.3.12
+)
+
 require (
 	github.com/cheggaaa/pb/v3 v3.0.1
 	github.com/golang/protobuf v1.3.4
