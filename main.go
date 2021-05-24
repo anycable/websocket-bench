@@ -297,7 +297,12 @@ func parseRemoteAddr(url string) (*net.TCPAddr, string, error) {
 		return nil, "", err
 	}
 
-	return &net.TCPAddr{IP: net.ParseIP(destIPs[0]), Port: int(nport)}, host, nil
+	ip := net.ParseIP(destIPs[0])
+	if host == "localhost" {
+		ip = nil
+	}
+
+	return &net.TCPAddr{IP: ip, Port: int(nport)}, host, nil
 }
 
 func openFileWriter() (io.Writer, context.CancelFunc) {

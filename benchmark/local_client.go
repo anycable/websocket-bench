@@ -93,7 +93,7 @@ func newLocalClient(
 
 	tcpConn, err := net.DialTCP("tcp", c.laddr, RemoteAddr.Addr)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
 
 	var conn io.ReadWriteCloser
