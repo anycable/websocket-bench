@@ -130,6 +130,10 @@ func newLocalClient(
 		c.serverAdapter = acsa
 	case "actioncable-connect":
 		acsa := &ActionCableServerConnectAdapter{conn: c.conn}
+		err = acsa.Startup()
+		if err != nil {
+			return nil, err
+		}
 		err = acsa.Connected(initTime)
 		if err != nil {
 			return nil, err

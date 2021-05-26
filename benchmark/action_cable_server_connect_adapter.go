@@ -18,12 +18,14 @@ type ActionCableServerConnectAdapter struct {
 }
 
 func (acsa *ActionCableServerConnectAdapter) Startup() error {
-
-	if CableConfig.Encoding == "json" {
-		acsa.codec = websocket.JSON
-	} else {
+	if CableConfig.Encoding == "msgpack" {
 		acsa.codec = MsgPackCodec
+	} else if CableConfig.Encoding == "protobuf" {
+		acsa.codec = ProtoBufCodec
+	} else {
+		acsa.codec = websocket.JSON
 	}
+
 	return nil
 }
 
