@@ -73,16 +73,16 @@ func (b *ConnectBenchmark) Run() error {
 			return err
 		}
 
-		if b.TotalSteps > 0 && b.TotalSteps == stepNum {
-			return nil
-		}
-
 		if b.Interactive {
 			promptToContinue()
 		}
 
 		if b.StepDelay > 0 {
 			time.Sleep(b.StepDelay)
+		}
+
+		if b.TotalSteps > 0 && b.TotalSteps == stepNum {
+			return nil
 		}
 	}
 }
