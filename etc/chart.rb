@@ -198,15 +198,15 @@ __END__
       }
     })};
 
-    drawChart('container--mean', 'Median RTT (msg) with different encoders',
+    drawChart('container--mean', 'Median RTT (ms)',
       <%= series[:median] %>
     )
 
-    drawChart('container--95p', '95p RTT (msg) with different encoders',
+    drawChart('container--95p', '95p RTT (ms)',
       <%= series[:p95] %>
     )
 
-    drawChart('container--max', 'Max RTT (msg) with different encoders',
+    drawChart('container--max', 'Max RTT (ms)',
       <%= series[:max] %>
     )
     </script>
