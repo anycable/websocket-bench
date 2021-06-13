@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	ConnectionTimeout = 60 * time.Second
+	ConnectionTimeout = 5 * time.Minute
 )
 
 type Benchmark struct {
