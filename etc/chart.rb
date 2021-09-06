@@ -65,7 +65,7 @@ end
 
 data = Hash.new { |h,k| h[k] = Measurment.new(k) }
 
-target_dir = ARGV[1] || File.join(__dir__, "../dist")
+target_dir = ARGV[0] || File.join(__dir__, "../dist")
 
 Dir.glob(File.join(target_dir, "*.json")).each do |report|
   matches = report.match(/\/([^\/]+)\_\d+.json/)
@@ -90,7 +90,15 @@ series = {}
 end
 
 renderer = ERB.new(DATA.read)
-puts renderer.result(binding)
+
+io =
+  if ARGV[1]
+    File.open(ARGV[1], "w")
+  else
+    STDOUT
+  end
+
+io.puts renderer.result(binding)
 
 __END__
 
