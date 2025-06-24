@@ -43,6 +43,19 @@ var options struct {
 	actionCableEncoding string
 	format              string
 	filename            string
+	// Pusher config
+	pusherAppID            string
+	pusherAppKey           string
+	pusherAppSecret        string
+	pusherChannel          string
+	pusherBroadcastChannel string
+	pusherHost             string
+	pusherPort             string
+
+	// AnyCable Pusher specific config
+	anycableRedisAddr    string
+	anycableHTTPEndpoint string
+	anycableBackend      string
 }
 
 var (
@@ -119,6 +132,16 @@ func main() {
 	cmdBroadcast.Flags().StringVarP(&options.format, "format", "f", "", "output format")
 	cmdBroadcast.Flags().StringVarP(&options.filename, "filename", "n", "", "output filename")
 	cmdBroadcast.Flags().StringVarP(&options.actionCableEncoding, "action-cable-encoding", "", "json", "Action Cable messages encoding (json, msgpack, protobuf)")
+	cmdBroadcast.Flags().StringVarP(&options.pusherAppID, "pusher-app-id", "", "app-id", "Pusher App ID for connect/broadcast tests")
+	cmdBroadcast.Flags().StringVarP(&options.pusherAppKey, "pusher-app-key", "", "app-key", "Pusher App Key for connect/broadcast tests")
+	cmdBroadcast.Flags().StringVarP(&options.pusherAppSecret, "pusher-app-secret", "", "app-secret", "Pusher App Secret for connect/broadcast tests")
+	cmdBroadcast.Flags().StringVar(&options.pusherBroadcastChannel, "pusher-channel", "private-benchmark", "Pusher channel name for connect/broadcast tests")
+	cmdBroadcast.Flags().StringVar(&options.pusherHost, "pusher-host", "127.0.0.1", "Pusher host for connect/broadcast tests")
+	cmdBroadcast.Flags().StringVar(&options.pusherPort, "pusher-port", "6001", "Pusher port for connect/broadcast tests")
+	cmdBroadcast.Flags().StringVar(&options.anycableBackend, "anycable-backend", "http", "Broadcast backend for AnyCable (redis|http)")
+	cmdBroadcast.Flags().StringVar(&options.anycableHTTPEndpoint, "anycable-http-endpoint", "http://localhost:8080/_broadcast", "HTTP /_broadcast endpoint for AnyCable")
+	cmdBroadcast.Flags().StringVar(&options.anycableRedisAddr, "anycable-redis-addr", "127.0.0.1:6379", "Redis address for AnyCable broadcasts")
+
 	cmdBroadcast.PersistentFlags().StringVarP(&options.channel, "channel", "", "{\"channel\":\"BenchmarkChannel\"}", "Action Cable channel identifier")
 	rootCmd.AddCommand(cmdBroadcast)
 
@@ -152,6 +175,7 @@ func main() {
 	cmdConnect.Flags().StringVarP(&options.format, "format", "f", "", "output format")
 	cmdConnect.Flags().StringVarP(&options.filename, "filename", "n", "", "output filename")
 	cmdConnect.Flags().StringVarP(&options.actionCableEncoding, "action-cable-encoding", "", "json", "Action Cable messages encoding (json, msgpack, protobuf)")
+	cmdConnect.Flags().StringVar(&options.pusherChannel, "pusher-channel", "Benchmark", "Pusher channel name for connect tests")
 	cmdConnect.PersistentFlags().StringVarP(&options.channel, "channel", "", "{\"channel\":\"BenchmarkChannel\"}", "Action Cable channel identifier")
 	rootCmd.AddCommand(cmdConnect)
 
@@ -209,6 +233,17 @@ func Stress(cmd *cobra.Command, args []string) {
 
 	benchmark.CableConfig.Channel = options.channel
 	benchmark.CableConfig.Encoding = options.actionCableEncoding
+
+	fillCommon(&benchmark.PusherConfig.PusherCommonConfig)
+	fillCommon(&benchmark.AnyCablePusherConfig.PusherCommonConfig)
+
+	benchmark.PusherConnectConfig.Channel = options.pusherChannel
+	benchmark.PusherConfig.Host = options.pusherHost
+	benchmark.PusherConfig.Port = options.pusherPort
+
+	benchmark.AnyCablePusherConfig.Backend = options.anycableBackend
+	benchmark.AnyCablePusherConfig.HTTPAddr = options.anycableHTTPEndpoint
+	benchmark.AnyCablePusherConfig.RedisAddr = options.anycableRedisAddr
 
 	wsconfig, err := websocket.NewConfig(config.WebsocketURL, config.WebsocketOrigin)
 	if err != nil {
@@ -318,4 +353,11 @@ func openFileWriter() (io.Writer, context.CancelFunc) {
 		panic(fmt.Errorf("failed to open output file: %v", err))
 	}
 	return file, func() { _ = file.Close() }
+}
+
+func fillCommon(pcc *benchmark.PusherCommonConfig) {
+	pcc.Channel = options.pusherBroadcastChannel
+	pcc.AppKey = options.pusherAppKey
+	pcc.AppID = options.pusherAppID
+	pcc.AppSecret = options.pusherAppSecret
 }

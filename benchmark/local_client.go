@@ -139,6 +139,35 @@ func newLocalClient(
 			return nil, err
 		}
 		c.serverAdapter = acsa
+	case "pusher":
+		pusherAdapter := &PusherServerAdapter{conn: c.conn}
+		err = pusherAdapter.Startup()
+		if err != nil {
+			return nil, err
+		}
+		c.serverAdapter = pusherAdapter
+	case "anycable-pusher":
+		anyCablePusherAdapter := &AnyCablePusherAdapter{conn: c.conn}
+		err = anyCablePusherAdapter.Startup()
+		if err != nil {
+			return nil, err
+		}
+		c.serverAdapter = anyCablePusherAdapter
+	case "pusher-connect", "anycable-connect":
+		skip := serverType == "anycable-connect"
+		psca := &PusherServerConnectAdapter{
+			conn:            c.conn,
+			skipUnsubscribe: skip,
+		}
+		err = psca.Startup()
+		if err != nil {
+			return nil, err
+		}
+		err = psca.Connected(initTime)
+		if err != nil {
+			return nil, err
+		}
+		c.serverAdapter = psca
 	case "phoenix":
 		psa := &PhoenixServerAdapter{conn: c.conn}
 		err = psa.Startup()
